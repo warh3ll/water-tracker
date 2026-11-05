@@ -150,13 +150,13 @@ fun DayScreen() {
                     Modifier.fillMaxWidth().padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("$ml ml", style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold)
-                    Text("of $goal ml goal" + if (ml >= goal) "  ✓" else "")
+                    Text("${Store.liters(ml)} l", style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold)
+                    Text("of ${Store.liters(goal)} l goal" + if (ml >= goal) "  ✓" else "")
                     LinearProgressIndicator(
                         progress = { (ml / goal.toFloat()).coerceIn(0f, 1f) },
                         modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
                     )
-                    Text("%.1f glasses (1 glass = %d ml)".format(ml / glass.toFloat(), glass))
+                    Text("%.1f glasses (1 glass = %s l)".format(ml / glass.toFloat(), Store.liters(glass)))
                 }
             }
         }
@@ -175,7 +175,7 @@ fun DayScreen() {
                         Notifier.updatePersistent(ctx)
                     },
                     modifier = Modifier.weight(2f)
-                ) { Text("+ Add glass ($glass ml)") }
+                ) { Text("+ Add glass (${Store.liters(glass)} l)") }
             }
         }
         item {
@@ -219,7 +219,7 @@ fun DayScreen() {
                     fontWeight = if (i == daysAgo) FontWeight.Bold else FontWeight.Normal
                 )
                 Text(
-                    "$dayMl ml" + if (dayBags > 0) "  ·  $dayBags movicol" else "",
+                    "${Store.liters(dayMl)} l" + if (dayBags > 0) "  ·  $dayBags movicol" else "",
                     fontWeight = if (i == daysAgo) FontWeight.Bold else FontWeight.Normal
                 )
             }
@@ -241,8 +241,8 @@ fun SettingsScreen() {
     val ctx = LocalContext.current
     Store.version.intValue // subscribe to data changes
     val reminders = Store.reminders(ctx)
-    var glassText by rememberSaveable { mutableStateOf(Store.glassMl(ctx).toString()) }
-    var goalText by rememberSaveable { mutableStateOf(Store.goalMl(ctx).toString()) }
+    var glassText by rememberSaveable { mutableStateOf(Store.liters(Store.glassMl(ctx))) }
+    var goalText by rememberSaveable { mutableStateOf(Store.liters(Store.goalMl(ctx))) }
 
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -254,15 +254,15 @@ fun SettingsScreen() {
             OutlinedTextField(
                 value = glassText,
                 onValueChange = { t ->
-                    val digits = t.filter { it.isDigit() }.take(4)
-                    glassText = digits
-                    digits.toIntOrNull()?.takeIf { it in 50..2000 }?.let {
+                    val clean = t.filter { it.isDigit() || it == '.' || it == ',' }.take(5)
+                    glassText = clean
+                    Store.parseLiters(clean)?.takeIf { it in 50..2000 }?.let {
                         Store.setGlassMl(ctx, it)
                         Notifier.updatePersistent(ctx)
                     }
                 },
-                label = { Text("Glass size (ml, 50–2000)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                label = { Text("Glass size (liters, 0.05–2)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -271,15 +271,15 @@ fun SettingsScreen() {
             OutlinedTextField(
                 value = goalText,
                 onValueChange = { t ->
-                    val digits = t.filter { it.isDigit() }.take(5)
-                    goalText = digits
-                    digits.toIntOrNull()?.takeIf { it in 250..10000 }?.let {
+                    val clean = t.filter { it.isDigit() || it == '.' || it == ',' }.take(5)
+                    goalText = clean
+                    Store.parseLiters(clean)?.takeIf { it in 250..10000 }?.let {
                         Store.setGoalMl(ctx, it)
                         Notifier.updatePersistent(ctx)
                     }
                 },
-                label = { Text("Daily goal (ml, 250–10000)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                label = { Text("Daily goal (liters, 0.25–10)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )

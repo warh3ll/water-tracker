@@ -56,7 +56,7 @@ object Notifier {
     private fun summary(c: Context): Pair<Int, String> {
         val ml = Store.intake(c, LocalDate.now())
         val glass = Store.glassMl(c)
-        return ml to "%.1f glasses (1 glass = %d ml)".format(ml / glass.toFloat(), glass)
+        return ml to "%.1f glasses (1 glass = %s l)".format(ml / glass.toFloat(), Store.liters(glass))
     }
 
     /** (Re)posts the ongoing notification showing today's total. */
@@ -66,7 +66,7 @@ object Notifier {
         val (ml, text) = summary(c)
         val n = NotificationCompat.Builder(c, CH_PERSISTENT)
             .setSmallIcon(R.drawable.ic_drop)
-            .setContentTitle("$ml / ${Store.goalMl(c)} ml today")
+            .setContentTitle("${Store.liters(ml)} / ${Store.liters(Store.goalMl(c))} l today")
             .setContentText(text)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -85,7 +85,7 @@ object Notifier {
         val n = NotificationCompat.Builder(c, CH_REMINDER)
             .setSmallIcon(R.drawable.ic_drop)
             .setContentTitle("Time to drink water")
-            .setContentText("$ml of ${Store.goalMl(c)} ml so far today")
+            .setContentText("${Store.liters(ml)} of ${Store.liters(Store.goalMl(c))} l so far today")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(openApp(c))

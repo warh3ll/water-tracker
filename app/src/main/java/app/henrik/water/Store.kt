@@ -12,6 +12,14 @@ object Store {
     /** Read this in a composable to get recomposed whenever any data changes. */
     val version = mutableIntStateOf(0)
 
+    /** Amounts are stored in ml internally but shown in liters, e.g. 250 -> "0.25", 3000 -> "3". */
+    fun liters(ml: Int): String =
+        "%.2f".format(java.util.Locale.US, ml / 1000.0).trimEnd('0').trimEnd('.')
+
+    /** Parses "0.25" or "0,25" (liters) into ml, or null if not a number. */
+    fun parseLiters(s: String): Int? =
+        s.replace(',', '.').toDoubleOrNull()?.let { Math.round(it * 1000).toInt() }
+
     private fun p(c: Context) =
         c.applicationContext.getSharedPreferences("water", Context.MODE_PRIVATE)
 
