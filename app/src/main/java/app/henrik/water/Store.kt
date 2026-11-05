@@ -26,6 +26,14 @@ object Store {
         bump()
     }
 
+    /** Daily goal in ml (default 3 liters). */
+    fun goalMl(c: Context): Int = p(c).getInt("goal_ml", 3000)
+
+    fun setGoalMl(c: Context, ml: Int) {
+        p(c).edit().putInt("goal_ml", ml).apply()
+        bump()
+    }
+
     fun intake(c: Context, d: LocalDate): Int = p(c).getInt("ml_$d", 0)
 
     fun addIntake(c: Context, d: LocalDate, deltaMl: Int) {

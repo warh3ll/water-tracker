@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -117,6 +118,7 @@ fun DayScreen() {
     val today = LocalDate.now()
     val date = today.minusDays(daysAgo.toLong())
     val glass = Store.glassMl(ctx)
+    val goal = Store.goalMl(ctx)
     val ml = Store.intake(ctx, date)
     val bags = Store.movicol(ctx, date)
 
@@ -149,6 +151,11 @@ fun DayScreen() {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text("$ml ml", style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold)
+                    Text("of $goal ml goal" + if (ml >= goal) "  ✓" else "")
+                    LinearProgressIndicator(
+                        progress = { (ml / goal.toFloat()).coerceIn(0f, 1f) },
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
+                    )
                     Text("%.1f glasses (1 glass = %d ml)".format(ml / glass.toFloat(), glass))
                 }
             }
@@ -235,6 +242,7 @@ fun SettingsScreen() {
     Store.version.intValue // subscribe to data changes
     val reminders = Store.reminders(ctx)
     var glassText by rememberSaveable { mutableStateOf(Store.glassMl(ctx).toString()) }
+    var goalText by rememberSaveable { mutableStateOf(Store.goalMl(ctx).toString()) }
 
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -254,6 +262,23 @@ fun SettingsScreen() {
                     }
                 },
                 label = { Text("Glass size (ml, 50–2000)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        item {
+            OutlinedTextField(
+                value = goalText,
+                onValueChange = { t ->
+                    val digits = t.filter { it.isDigit() }.take(5)
+                    goalText = digits
+                    digits.toIntOrNull()?.takeIf { it in 250..10000 }?.let {
+                        Store.setGoalMl(ctx, it)
+                        Notifier.updatePersistent(ctx)
+                    }
+                },
+                label = { Text("Daily goal (ml, 250–10000)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
